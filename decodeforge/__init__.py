@@ -2,6 +2,12 @@
 
 from decodeforge.dfa import RegexDFA
 from decodeforge.engine import GrammarEngine
+from decodeforge.export import (
+    dfa_from_dict,
+    dfa_to_dict,
+    export_dfa_json,
+    load_dfa_json,
+)
 from decodeforge.mask import apply_batched_masks, apply_mask
 from decodeforge.schema import json_schema_to_regex, pydantic_to_regex
 from decodeforge.trie import SubTokenTrie, TrieNode
@@ -15,6 +21,10 @@ __all__ = [
     "TrieNode",
     "apply_batched_masks",
     "apply_mask",
+    "dfa_from_dict",
+    "dfa_to_dict",
+    "export_dfa_json",
     "json_schema_to_regex",
+    "load_dfa_json",
     "pydantic_to_regex",
 ]
