@@ -1,6 +1,6 @@
 import torch
 
-from decodeforge.mask import apply_mask
+from decodeforge.mask import apply_batched_masks, apply_mask
 
 
 def test_apply_mask_1d():
@@ -37,3 +37,22 @@ def test_custom_fill_value():
     masked = apply_mask(logits, mask, fill_value=-9999.0)
     assert masked[0] == 10.0
     assert masked[1] == -9999.0
+
+
+def test_apply_batched_masks():
+    logits = torch.tensor(
+        [
+            [1.0, 2.0, 3.0],
+            [4.0, 5.0, 6.0],
+        ]
+    )
+    mask1 = torch.tensor([True, False, False])
+    mask2 = torch.tensor([False, False, True])
+
+    batched = apply_batched_masks(logits, [mask1, mask2])
+    assert batched[0, 0] == 1.0
+    assert batched[0, 1] == -float("inf")
+    assert batched[0, 2] == -float("inf")
+    assert batched[1, 0] == -float("inf")
+    assert batched[1, 1] == -float("inf")
+    assert batched[1, 2] == 6.0
