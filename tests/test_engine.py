@@ -113,3 +113,14 @@ def test_logits_sampling_loop_simulation():
 
     engine.advance(selected)
     assert engine.is_terminated() is True
+
+
+def test_engine_state_analytics():
+    vocab = {0: "a", 1: "b", 2: "c", 3: "<eos>"}
+    engine = GrammarEngine.from_regex("a|b", vocab=vocab, eos_token_id=3)
+
+    assert engine.num_states > 0
+    assert engine.num_transitions > 0
+    # From start: only 'a' (0) and 'b' (1) are valid -> 2 tokens
+    assert engine.active_token_count() == 2
+    assert engine.vocab_coverage_ratio() == 0.5

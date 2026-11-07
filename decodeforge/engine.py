@@ -36,6 +36,27 @@ class GrammarEngine:
     def state(self) -> int:
         return self.current_state
 
+    @property
+    def num_states(self) -> int:
+        """Total number of states in the underlying DFA."""
+        return len(self.dfa.states)
+
+    @property
+    def num_transitions(self) -> int:
+        """Total number of transitions in the underlying DFA."""
+        return len(self.dfa.transitions)
+
+    def active_token_count(self, state: int | None = None) -> int:
+        """Return the number of valid tokens from the given or current state."""
+        mask = self.get_token_mask(state)
+        return int(mask.sum().item())
+
+    def vocab_coverage_ratio(self, state: int | None = None) -> float:
+        """Return the fraction of vocabulary tokens permitted from the given or current state."""
+        if self.vocab_size == 0:
+            return 0.0
+        return self.active_token_count(state) / float(self.vocab_size)
+
     def reset(self) -> None:
         """Reset the engine to the initial grammar state."""
         self.current_state = self.dfa.start_state
