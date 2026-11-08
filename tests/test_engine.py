@@ -124,3 +124,42 @@ def test_engine_state_analytics():
     # From start: only 'a' (0) and 'b' (1) are valid -> 2 tokens
     assert engine.active_token_count() == 2
     assert engine.vocab_coverage_ratio() == 0.5
+
+
+def test_get_batch_masks_shape_and_correctness():
+    # Three states: start, after 'a', after 'ab' — different valid continuations.
+    vocab = {0: "a", 1: "b", 2: "c", 3: "<eos>"}
+    engine = GrammarEngine.from_regex("a(b|c)", vocab=vocab, eos_token_id=3)
+
+    # Collect the first few reachable states for the batch query.
+    s0 = engine.dfa.start_state
+    s1 = engine.dfa.walk_string(s0, "a")
+    assert s1 is not None, "DFA must have a state after 'a'"
+
+    batch = engine.get_batch_masks([s0, s1])
+    assert batch.shape == (2, 4), f"expected (2, 4), got {batch.shape}"
+    assert batch.dtype == torch.bool
+
+    # Row 0 (start): only 'a' (id 0) is valid.
+    assert batch[0, 0].item() is True   # 'a' valid
+    assert batch[0, 1].item() is False  # 'b' invalid from start
+    assert batch[0, 3].item() is False  # EOS not valid before accepting
+
+    # Row 1 (after 'a'): 'b' and 'c' are valid, 'a' is not.
+    assert batch[1, 1].item() is True   # 'b' valid
+    assert batch[1, 2].item() is True   # 'c' valid
+    assert batch[1, 0].item() is False  # 'a' invalid here
+
+
+def test_get_batch_masks_caches_consistently():
+    vocab = {0: "x", 1: "y", 2: "<eos>"}
+    engine = GrammarEngine.from_regex("x+", vocab=vocab, eos_token_id=2)
+    s0 = engine.dfa.start_state
+
+    # Warm cache via get_token_mask first.
+    individual = engine.get_token_mask(s0)
+    batch = engine.get_batch_masks([s0])
+
+    assert torch.equal(individual, batch[0]), (
+        "batch mask row must be identical to individually computed mask"
+    )

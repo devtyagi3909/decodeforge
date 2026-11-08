@@ -90,6 +90,22 @@ class GrammarEngine:
         self._mask_cache[curr] = mask
         return mask
 
+    def get_batch_masks(self, states: list[int]) -> torch.Tensor:
+        """Return a stacked boolean mask tensor of shape ``(len(states), vocab_size)``
+        for a batch of grammar states.
+
+        Useful for parallel beam search or speculative decoding where multiple
+        hypothesis states must be masked simultaneously.
+
+        Args:
+            states: List of DFA state IDs to generate masks for.
+
+        Returns:
+            Boolean tensor of shape ``(len(states), vocab_size)``.  Row ``i``
+            is the token mask for ``states[i]``.
+        """
+        return torch.stack([self.get_token_mask(s) for s in states])
+
     def advance(self, token_id: int) -> int:
         """Advance the grammar state machine with the sampled token.
 
